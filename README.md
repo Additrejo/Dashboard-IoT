@@ -1,2 +1,7 @@
 # Dashboard-IoT
-Programa Dashboard para microcontroladores.
+Programa Dashboard para microcontroladores
+
+
+
+#  Arquitectura General del Proyecto.
+
