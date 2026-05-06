@@ -1,0 +1,23 @@
+# Dependencias
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Base de datos
+*.db
+*.db-journal
+
+# Variables de entorno
+.env
+
+# Vite
+frontend/dist/
+frontend/.vite/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
