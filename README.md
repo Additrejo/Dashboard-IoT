@@ -63,7 +63,7 @@ Diseñada para escalar a aplicación web en fases posteriores.
 | Fase | Tema                        | Estado      |
 |------|-----------------------------|-------------|
 | 1    | Hardware + Serial + Backend | Completada  |
-| 2    | Frontend — Dashboard        | En proceso  |
+| 2    | Frontend — Dashboard        | Completada  |
 | 3    | Control HMI                 | Pendiente   |
 | 4    | Multi-device                | Pendiente   |
 | 5    | WiFi / MQTT                 | Pendiente   |
@@ -349,19 +349,69 @@ El archivo `.env` ya no requiere `SERIAL_PORT`. La variable se eliminó.
 
 Construir la interfaz principal del dashboard: tarjetas de sensores, gráficas en tiempo real y estado de conexión, consumiendo los datos del backend vía REST API y WebSocket.
 
-### Archivos a crear
+### Verificación de datos — API REST
+
+Antes de construir el frontend se confirmó que el backend recibe y almacena correctamente los datos de la ESP32. La respuesta de `GET /api/readings/latest` con el sketch de verificación cargado es:
+
+```json
+[
+  {"sensor_type":"humidity",    "value":58.5, "unit":"%", "timestamp":"2026-05-12 05:35:43"},
+  {"sensor_type":"temperature", "value":24.3, "unit":"C", "timestamp":"2026-05-12 05:35:43"},
+  {"sensor_type":"voltage",     "value":3.34, "unit":"V", "timestamp":"2026-05-12 05:35:43"}
+]
+```
+
+Nota: el monitor serie de Arduino IDE debe estar cerrado mientras el backend lee el puerto. Ambos compiten por el mismo recurso COM.
+
+### Estructura de archivos completada
 
 ```
 frontend/src/
 ├── components/
-│   ├── PortSelector.jsx    (completado)
-│   ├── SensorCard.jsx      (pendiente)
-│   ├── Chart.jsx           (pendiente)
-│   └── Controls.jsx        (pendiente)
-└── services/
-    └── api.js              (pendiente)
+│   ├── PortSelector.jsx    — Selector de puerto serial
+│   ├── SensorCard.jsx      — Tarjeta individual de sensor
+│   └── Chart.jsx           — Gráfica de historial con Recharts
+├── services/
+│   └── api.js              — Funciones REST y WebSocket
+└── App.jsx                 — Componente raíz del dashboard
 ```
+
+### Descripción de cada archivo
+
+#### `frontend/src/services/api.js`
+
+Centraliza las llamadas al backend. Expone tres funciones:
+
+- `getLatestReadings()` — obtiene el último valor de cada sensor.
+- `getReadingHistory(sensorType, limit)` — obtiene el historial de un sensor.
+- `createWebSocket(onMessage)` — abre una conexión WebSocket y ejecuta un callback por cada mensaje recibido.
+
+#### `frontend/src/components/SensorCard.jsx`
+
+Muestra el valor actual de un sensor con su unidad y la hora de la última lectura. Recibe las props `label`, `value`, `unit` y `timestamp`.
+
+#### `frontend/src/components/Chart.jsx`
+
+Gráfica de línea con Recharts que muestra el historial de un sensor. Recibe `title`, `data`, `dataKey`, `color` y `unit`. La animación está desactivada para evitar parpadeos en actualizaciones frecuentes.
+
+#### `frontend/src/App.jsx`
+
+Componente raíz. Al montar:
+
+1. Carga las últimas lecturas y el historial de temperatura y humedad vía REST.
+2. Abre una conexión WebSocket que recarga los datos cada vez que llega una nueva lectura.
+3. Renderiza el header con `PortSelector`, las tarjetas de sensores y las gráficas.
+
+### Comportamiento en tiempo real
+
+El dashboard se actualiza automáticamente cada vez que la ESP32 envía una lectura. El flujo es:
+
+```
+ESP32 → Serial UART → serialReader.js → SQLite → WebSocket broadcast → App.jsx → re-fetch → UI
+```
+
+No se requiere recargar la página manualmente.
 
 ---
 
-*Ultima actualización: Fase 1 completada — Fase 2 en proceso.*
+*Ultima actualización: Fase 2 completada — Visualización de datos operativa.*
