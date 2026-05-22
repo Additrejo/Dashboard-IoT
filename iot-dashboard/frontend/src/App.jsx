@@ -2,10 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import PortSelector from './components/PortSelector';
 import SensorCard   from './components/SensorCard';
 import Chart        from './components/Chart';
+import Controls     from './components/Controls';
 import { getLatestReadings, getReadingHistory, createWebSocket } from './services/api';
 
 export default function App() {
-    const [latest,  setLatest]  = useState([]);
+    const [latest,      setLatest]      = useState([]);
     const [tempHistory, setTempHistory] = useState([]);
     const [humHistory,  setHumHistory]  = useState([]);
     const wsRef = useRef(null);
@@ -88,6 +89,10 @@ export default function App() {
                         unit="%"
                     />
                 </section>
+
+                <section>
+                    <Controls />
+                </section>
             </main>
         </div>
     );
@@ -117,10 +122,10 @@ const styles = {
         padding:    '14px 0',
     },
     main: {
-        padding: '24px',
-        display: 'flex',
+        padding:       '24px',
+        display:       'flex',
         flexDirection: 'column',
-        gap: '20px',
+        gap:           '20px',
     },
     cards: {
         display:  'flex',

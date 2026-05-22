@@ -91,4 +91,16 @@ function getActivePort() {
     return activePort ? activePort.path : null;
 }
 
-module.exports = { listPorts, connectPort, disconnectPort, getActivePort };
+function sendCommand(command) {
+    if (activePort && activePort.isOpen) {
+        activePort.write(command + '\n', (err) => {
+            if (err) console.error(`Command write error: ${err.message}`);
+            else     console.log(`Command sent: ${command}`);
+        });
+        return true;
+    }
+    console.error('Command ignored: no active serial port.');
+    return false;
+}
+
+module.exports = { listPorts, connectPort, disconnectPort, getActivePort, sendCommand };

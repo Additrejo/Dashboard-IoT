@@ -3,7 +3,7 @@ const cors                = require('cors');
 const { WebSocketServer } = require('ws');
 const http                = require('http');
 const db                  = require('./database');
-const { listPorts, connectPort, disconnectPort, getActivePort } = require('./serialReader');
+const { listPorts, connectPort, disconnectPort, getActivePort, sendCommand } = require('./serialReader');
 require('dotenv').config();
 
 const app = express();
@@ -22,7 +22,11 @@ app.get('/api/readings/:sensorType', (req, res) => {
 
 app.post('/api/control', (req, res) => {
     const { command } = req.body;
-    console.log(`HMI command received: ${command}`);
+    if (!command) return res.status(400).json({ error: 'command is required' });
+
+    const sent = sendCommand(command);
+    if (!sent) return res.status(503).json({ error: 'No active serial port.' });
+
     res.json({ ok: true, command });
 });
 
