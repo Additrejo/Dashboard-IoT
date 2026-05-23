@@ -64,7 +64,7 @@ Diseñada para escalar a aplicación web en fases posteriores.
 |------|-----------------------------|-------------|
 | 1    | Hardware + Serial + Backend | Completada  |
 | 2    | Frontend — Dashboard        | Completada  |
-| 3    | Control HMI                 | Pendiente   |
+| 3    | Control HMI                 | Completada  |
 | 4    | Multi-device                | Pendiente   |
 | 5    | WiFi / MQTT                 | Pendiente   |
 | 6    | Migración web               | Pendiente   |
@@ -414,4 +414,75 @@ No se requiere recargar la página manualmente.
 
 ---
 
-*Ultima actualización: Fase 2 completada — Visualización de datos operativa.*
+## Fase 3 — Control HMI
+
+### Objetivo
+
+Enviar comandos desde el dashboard hacia la ESP32 para controlar salidas digitales en tiempo real.
+
+### Flujo de control
+
+```
+Dashboard (botón) → POST /api/control → serialReader.js → Serial UART → ESP32 → GPIO
+```
+
+### Salidas configuradas
+
+| Control  | GPIO | Descripción          |
+|----------|------|----------------------|
+| LED      | 2    | LED externo          |
+| Output 1 | 4    | Salida digital libre |
+| Output 2 | 5    | Salida digital libre |
+
+### Protocolo de comandos
+
+Los comandos se envían como texto plano terminado en `\n` por el puerto serial:
+
+```
+LED:ON
+LED:OFF
+OUT1:ON
+OUT1:OFF
+OUT2:ON
+OUT2:OFF
+```
+
+### Cambios en el backend
+
+Se agregó la función `sendCommand` en `serialReader.js` y se actualizó el endpoint `POST /api/control` en `index.js` para escribir el comando al puerto serial activo.
+
+### Componente Controls.jsx
+
+Componente React con tres botones de toggle. Cada botón envía el comando correspondiente al backend y actualiza su estado visual de forma independiente.
+
+### Firmware — `firmware/src/main.cpp`
+
+El firmware maneja simultáneamente:
+
+- Lectura de comandos entrantes por serial (sin usar `delay()`)
+- Envío de lecturas de sensores cada 2 segundos con `millis()`
+- Restauración del estado de las salidas en cada ciclo para garantizar consistencia
+
+Se deshabilita el brownout detector con `WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0)` para evitar reinicios por caídas de voltaje en el puerto USB.
+
+### Notas de hardware
+
+- El LED externo se conecta entre GPIO2 y GND con una resistencia de 220Ω en serie.
+- El puerto USB debe entregar corriente suficiente. Puertos con alimentación limitada o cables de baja calidad causan que el brownout detector se active continuamente y la ESP32 reinicie en loop.
+- PlatformIO se integró en VS Code para compilar y cargar el firmware sin salir del entorno de desarrollo.
+
+### Flujo de trabajo para cargar firmware
+
+El puerto serial solo puede ser usado por un proceso a la vez. El procedimiento correcto es:
+
+```
+1. Disconnect en el dashboard
+2. Detener el backend (Ctrl + C)
+3. Cargar firmware con PlatformIO
+4. Iniciar el backend (node index.js)
+5. Connect en el dashboard
+```
+
+---
+
+*Ultima actualización: Fase 3 completada — Control HMI operativo.*

@@ -68,9 +68,9 @@ void loop() {
     if (millis() - lastSend >= 2000) {
         lastSend = millis();
 
-        float temperature = 23.5 + ((millis() % 40  - 20) * 0.1);
-        float humidity    = 60.0 + ((millis() % 100 - 50) * 0.1);
-        float voltage     = 3.30 + ((millis() % 10  -  5) * 0.01);
+       float temperature = 23.5 + (((long)(millis() % 40)  - 20) * 0.1f);
+       float humidity    = 60.0 + (((long)(millis() % 100) - 50) * 0.1f);
+       float voltage     = 3.30 + (((long)(millis() % 10)  -  5) * 0.01f);
 
         Serial.print("{\"device\":\"esp32-01\"");
         Serial.print(",\"temp\":");  Serial.print(temperature, 1);

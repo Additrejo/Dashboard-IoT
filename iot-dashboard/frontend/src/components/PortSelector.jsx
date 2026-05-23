@@ -96,8 +96,15 @@ const styles = {
     container:    { display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px',
                     background: '#f9fafb', borderBottom: '1px solid #e5e7eb', flexWrap: 'wrap' },
     label:        { fontSize: '13px', fontWeight: '500', color: '#374151' },
-    select:       { fontSize: '13px', padding: '5px 8px', border: '1px solid #d1d5db',
-                    borderRadius: '4px', background: '#fff', minWidth: '220px' },
+    select: { 
+    fontSize: '13px', 
+    padding: '5px 8px', 
+    border: '1px solid #d1d5db',
+    borderRadius: '4px', 
+    background: '#fff', 
+    color: '#111827',
+    minWidth: '220px' 
+                     },
     btnPrimary:   { fontSize: '13px', padding: '5px 14px', background: '#1d4ed8', color: '#fff',
                     border: 'none', borderRadius: '4px', cursor: 'pointer' },
     btnSecondary: { fontSize: '13px', padding: '5px 14px', background: '#fff', color: '#374151',
