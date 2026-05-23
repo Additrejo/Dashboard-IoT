@@ -6,7 +6,6 @@
 
 String inputBuffer = "";
 
-// Estado de las salidas
 bool stateLED  = false;
 bool stateOUT1 = false;
 bool stateOUT2 = false;
@@ -16,21 +15,30 @@ void processCommand(String cmd) {
     if (cmd == "LED:ON") {
         stateLED = true;
         digitalWrite(PIN_LED, HIGH);
+        Serial.println("LED encendido");
     } else if (cmd == "LED:OFF") {
         stateLED = false;
         digitalWrite(PIN_LED, LOW);
+        Serial.println("LED apagado");
     } else if (cmd == "OUT1:ON") {
         stateOUT1 = true;
         digitalWrite(PIN_OUT1, HIGH);
+        Serial.println("OUT1 encendido");
     } else if (cmd == "OUT1:OFF") {
         stateOUT1 = false;
         digitalWrite(PIN_OUT1, LOW);
+        Serial.println("OUT1 apagado");
     } else if (cmd == "OUT2:ON") {
         stateOUT2 = true;
         digitalWrite(PIN_OUT2, HIGH);
+        Serial.println("OUT2 encendido");
     } else if (cmd == "OUT2:OFF") {
         stateOUT2 = false;
         digitalWrite(PIN_OUT2, LOW);
+        Serial.println("OUT2 apagado");
+    } else {
+        Serial.print("Comando no reconocido: ");
+        Serial.println(cmd);
     }
 }
 
@@ -42,10 +50,10 @@ void setup() {
     digitalWrite(PIN_LED,  LOW);
     digitalWrite(PIN_OUT1, LOW);
     digitalWrite(PIN_OUT2, LOW);
+    Serial.println("ESP32 lista.");
 }
 
 void loop() {
-    // Leer comandos entrantes
     while (Serial.available()) {
         char c = Serial.read();
         if (c == '\n') {
@@ -56,15 +64,13 @@ void loop() {
         }
     }
 
-    // Enviar lecturas cada 2 segundos sin usar delay()
     static unsigned long lastSend = 0;
     if (millis() - lastSend >= 2000) {
         lastSend = millis();
 
-        // Generar valores simulados
-        float temperature = 23.5 + ((millis() % 40 - 20) * 0.1);
+        float temperature = 23.5 + ((millis() % 40  - 20) * 0.1);
         float humidity    = 60.0 + ((millis() % 100 - 50) * 0.1);
-        float voltage     = 3.30 + ((millis() % 10 - 5)   * 0.01);
+        float voltage     = 3.30 + ((millis() % 10  -  5) * 0.01);
 
         Serial.print("{\"device\":\"esp32-01\"");
         Serial.print(",\"temp\":");  Serial.print(temperature, 1);
@@ -72,7 +78,6 @@ void loop() {
         Serial.print(",\"volt\":"); Serial.print(voltage,     2);
         Serial.println("}");
 
-        // Restaurar estado de salidas por si hubo reset
         digitalWrite(PIN_LED,  stateLED  ? HIGH : LOW);
         digitalWrite(PIN_OUT1, stateOUT1 ? HIGH : LOW);
         digitalWrite(PIN_OUT2, stateOUT2 ? HIGH : LOW);
