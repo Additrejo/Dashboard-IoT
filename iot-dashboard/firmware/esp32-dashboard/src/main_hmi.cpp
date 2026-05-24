@@ -65,7 +65,7 @@ void loop() {
     }
 
     static unsigned long lastSend = 0;
-    if (millis() - lastSend >= 2000) {
+    if (millis() - lastSend >= 1000) {
         lastSend = millis();
 
        float temperature = 23.5 + (((long)(millis() % 40)  - 20) * 0.1f);

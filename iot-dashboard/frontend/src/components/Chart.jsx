@@ -30,12 +30,14 @@ export default function Chart({ title, data, dataKey, color, unit }) {
                         labelStyle={{ color: '#9ca3af' }}
                     />
                     <Line
-                        type="monotone"
-                        dataKey="value"
-                        stroke={color}
-                        strokeWidth={1.5}
-                        dot={false}
-                        isAnimationActive={false}
+                       type="natural"
+                       dataKey="value"
+                       stroke={color}
+                       strokeWidth={1.5}
+                       dot={false}
+                       isAnimationActive={true}
+                       animationDuration={800}
+                       animationEasing="ease-in-out"
                     />
                 </LineChart>
             </ResponsiveContainer>

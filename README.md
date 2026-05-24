@@ -485,4 +485,165 @@ El puerto serial solo puede ser usado por un proceso a la vez. El procedimiento 
 
 ---
 
-*Ultima actualización: Fase 3 completada — Control HMI operativo.*
+---
+
+## Correcciones y mejoras — Post Fase 3
+
+### Overflow en valores simulados del firmware
+
+El cálculo original de valores simulados usaba `millis()` que devuelve `unsigned long`. La resta producía underflow cuando el resultado era negativo, generando valores como `429496736.00` en el dashboard.
+
+Solución aplicada — cast explícito a `long` antes de la resta:
+
+```cpp
+float temperature = 23.5 + (((long)(millis() % 40)  - 20) * 0.1f);
+float humidity    = 60.0 + (((long)(millis() % 100) - 50) * 0.1f);
+float voltage     = 3.30 + (((long)(millis() % 10)  -  5) * 0.01f);
+```
+
+### Color del selector de puerto serial
+
+El dropdown del selector de puerto heredaba el fondo oscuro del sistema operativo, haciendo el texto invisible.
+
+Corrección en `PortSelector.jsx`:
+
+```jsx
+select: {
+    fontSize:   '13px',
+    padding:    '5px 8px',
+    border:     '1px solid #d1d5db',
+    borderRadius: '4px',
+    background: '#fff',
+    color:      '#111827',
+    minWidth:   '220px'
+}
+```
+
+Corrección global en `frontend/src/index.css`:
+
+```css
+select option {
+    background-color: #ffffff;
+    color: #111827;
+}
+```
+
+### Estado actual del proyecto
+
+| Componente         | Estado      |
+|--------------------|-------------|
+| Backend serial     | Operativo   |
+| Base de datos      | Operativa   |
+| Dashboard          | Operativo   |
+| Control HMI        | Operativo   |
+| PlatformIO         | Integrado   |
+| Sensores físicos   | Operativo   |
+| WiFi / MQTT        | Pendiente   |
+| Multi-device       | Pendiente   |
+| Migración web      | Pendiente   |
+
+---
+
+## Integración de sensor físico DHT11
+
+### Sensor utilizado
+
+Módulo DHT11 de Keyes con resistencia pull-up integrada en la placa.
+
+### Conexiones
+
+| Sensor | ESP32  |
+|--------|--------|
+| GND    | GND    |
+| VCC    | 3.3V   |
+| SEÑAL  | GPIO4  |
+
+### Librerías agregadas en `platformio.ini`
+
+```ini
+lib_deps =
+    adafruit/DHT sensor library @ ^1.4.6
+    adafruit/Adafruit Unified Sensor @ ^1.1.14
+```
+
+### Estructura de entornos en PlatformIO
+
+Se configuraron dos entornos independientes en `platformio.ini` para mantener el firmware HMI y el firmware DHT11 sin conflictos:
+
+| Entorno | Archivo fuente  | Descripción                        |
+|---------|-----------------|------------------------------------|
+| `hmi`   | `main_hmi.cpp`  | Control HMI con LED y salidas      |
+| `dht`   | `main_dht.cpp`  | Lectura de sensor DHT11 real       |
+
+Para cargar cada entorno:
+
+```bash
+pio run --target upload --environment hmi
+pio run --target upload --environment dht
+```
+
+### Firmware DHT11 — `firmware/src/main_dht.cpp`
+
+Lee temperatura y humedad del sensor cada 1 segundo. El JSON se construye como `String` completo antes de enviarlo por serial para evitar fragmentación en el parser del backend.
+
+```cpp
+String json = "";
+json += "{\"device\":\"esp32-01\"";
+json += ",\"temp\":" + String(temperature, 1);
+json += ",\"hum\":"  + String(humidity,    1);
+json += "}";
+Serial.println(json);
+Serial.flush();
+```
+
+`Serial.flush()` garantiza que el buffer se vacía completamente antes de continuar.
+
+### Valores reales obtenidos
+
+| Sensor      | Valor típico | Unidad |
+|-------------|--------------|--------|
+| Temperatura | 27.6         | °C     |
+| Humedad     | 47.0         | %      |
+
+### Problemas resueltos durante la integración
+
+**JSON fragmentado:** El backend recibía el JSON partido en múltiples líneas. Se resolvió construyendo el `String` completo antes de llamar a `Serial.println`.
+
+**Datos históricos en la gráfica:** Al cambiar de datos simulados a reales, la base de datos contenía miles de registros antiguos que distorsionaban las gráficas. Solución: eliminar `iot_data.db` y reiniciar el backend para comenzar desde cero.
+
+```bash
+del iot_data.db
+node index.js
+```
+
+---
+
+## Mejoras en la gráfica — `frontend/src/components/Chart.jsx`
+
+Se actualizó el componente `Line` de Recharts para mejorar la fluidez visual:
+
+```jsx
+<Line
+    type="natural"
+    dataKey="value"
+    stroke={color}
+    strokeWidth={1.5}
+    dot={false}
+    isAnimationActive={true}
+    animationDuration={800}
+    animationEasing="ease-in-out"
+/>
+```
+
+Cambios aplicados:
+
+- `type="natural"` — suaviza la curva entre puntos con interpolación natural
+- `isAnimationActive={true}` — activa la animación de transición
+- `animationDuration={800}` — duración de 800ms por transición
+- `animationEasing="ease-in-out"` — curva de aceleración suave
+
+El intervalo de envío del firmware se redujo de 2000ms a 1000ms para aprovechar el límite máximo del DHT11 y duplicar la frecuencia de actualización en el dashboard.
+
+---
+
+*Ultima actualización: Sensor DHT11 integrado — Lecturas reales operativas.*
